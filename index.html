@@ -23,7 +23,7 @@
             font-size: 16px;
             margin: 5px;
         }
-        #search-options button, #add-word-button, #export-json-button, #create-dictionary-button, #select-dictionary-button {
+        #search-options button, #add-word-button, #export-json-button, #create-dictionary-button, #select-dictionary-button, .edit-word-button, .delete-word-button {
             background-color: #00aa00;
             color: white;
             border: none;
@@ -41,6 +41,12 @@
         }
         .hidden {
             display: none;
+        }
+        .word-entry {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #fff;
         }
     </style>
 </head>
@@ -76,11 +82,13 @@
         </div>
         <div id="font-upload-container">
             <label for="font-upload">フォントをアップロード:</label>
-            <input type="file" id="font-upload" accept=".ttf,.otf" onchange="uploadFont(event)">
+            <input type="file" id="font-upload" accept=".ttf,.otf">
+            <button onclick="loadFont()">フォントを読み込む</button>
         </div>
         <div id="otm-upload-container">
             <label for="otm-upload">OTM-jsonをインポート:</label>
-            <input type="file" id="otm-upload" accept=".json" onchange="importOTMJson(event)">
+            <input type="file" id="otm-upload" accept=".json">
+            <button onclick="importOTMJson()">OTM-jsonを読み込む</button>
         </div>
         <div id="dictionary-data"></div>
         <div id="page-controls">
@@ -131,14 +139,19 @@
             const endIndex = startIndex + resultsPerPage;
             const pageData = filteredData.slice(startIndex, endIndex);
 
-            pageData.forEach(entry => {
+            pageData.forEach((entry, index) => {
                 const entryDiv = document.createElement('div');
-                entryDiv.innerHTML = `<h3>${entry.word} (${entry.translation})</h3>
-                                      <p>${entry.definition}</p>
-                                      <p>例文: ${entry.examples.join(', ')}</p>
-                                      <p>変化形: ${entry.variations.join(', ')}</p>
-                                      <p>発音: ${entry.pronunciation}</p>
-                                      <p>関連語: ${entry.relatedWords.join(', ')}</p>`;
+                entryDiv.className = 'word-entry';
+                entryDiv.innerHTML = `
+                    <h3>${entry.word} (${entry.translation})</h3>
+                    <p>${entry.definition}</p>
+                    <p>例文: ${entry.examples.join(', ')}</p>
+                    <p>変化形: ${entry.variations.join(', ')}</p>
+                    <p>発音: ${entry.pronunciation}</p>
+                    <p>関連語: ${entry.relatedWords.join(', ')}</p>
+                    <button class="edit-word-button" onclick="editWord(${startIndex + index})">編集</button>
+                    <button class="delete-word-button" onclick="deleteWord(${startIndex + index})">削除</button>
+                `;
                 dictionaryDataDiv.appendChild(entryDiv);
             });
 
@@ -190,11 +203,11 @@
             const translation = document.getElementById('new-translation-input').value;
             const definition = document.getElementById('new-definition-input').value;
             const examples = document.getElementById('new-examples-input').value.split(',').map(e => e.trim());
-            const variations = document.getElementById('new-variations-input').value.split(',').map(e => e.trim());
+            const variations = document.getElementById('new-variations-input').value.split(',').map(v => v.trim());
             const pronunciation = document.getElementById('new-pronunciation-input').value;
-            const relatedWords = document.getElementById('new-related-words-input').value.split(',').map(e => e.trim());
+            const relatedWords = document.getElementById('new-related-words-input').value.split(',').map(rw => rw.trim());
 
-            if (word && translation && definition && currentDictionary) {
+            if (currentDictionary && word && translation) {
                 dictionaries[currentDictionary].push({
                     word,
                     translation,
@@ -204,14 +217,31 @@
                     pronunciation,
                     relatedWords
                 });
-
                 searchDictionary();
-                displayDictionary(currentPage);
             }
         }
 
-        function uploadFont(event) {
-            const file = event.target.files[0];
+        function editWord(index) {
+            const word = dictionaries[currentDictionary][index];
+            document.getElementById('new-word-input').value = word.word;
+            document.getElementById('new-translation-input').value = word.translation;
+            document.getElementById('new-definition-input').value = word.definition;
+            document.getElementById('new-examples-input').value = word.examples.join(', ');
+            document.getElementById('new-variations-input').value = word.variations.join(', ');
+            document.getElementById('new-pronunciation-input').value = word.pronunciation;
+            document.getElementById('new-related-words-input').value = word.relatedWords.join(', ');
+
+            deleteWord(index);
+        }
+
+        function deleteWord(index) {
+            dictionaries[currentDictionary].splice(index, 1);
+            searchDictionary();
+        }
+
+        function loadFont() {
+            const fontInput = document.getElementById('font-upload');
+            const file = fontInput.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -225,8 +255,9 @@
             }
         }
 
-        function importOTMJson(event) {
-            const file = event.target.files[0];
+        function importOTMJson() {
+            const otmInput = document.getElementById('otm-upload');
+            const file = otmInput.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
