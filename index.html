@@ -28,54 +28,133 @@
             border: none;
             padding: 10px 20px;
             cursor: pointer;
+            margin-right: 10px;
+        }
+        #loginStatus {
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <h1>架空言語辞書アプリ</h1>
-    <p id="currentDictionary">現在の辞書: <span id="dictionaryName"></span></p>
-    <p>単語数: <span id="wordCount"></span></p>
-    <p>ページ: <span id="currentPage"></span></p>
-    
-    <input type="file" id="fontUpload" accept=".ttf,.otf,.woff">
-    <input type="file" id="otmJsonUpload" accept=".json">
-    <button onclick="uploadFont()">フォントアップロード</button>
-    <button onclick="uploadOtmJson()">OTM JSONアップロード</button>
+    <div id="loginStatus"></div>
 
-    <h2>単語追加</h2>
-    <form id="addWordForm">
-        <label for="word">単語:</label>
-        <input type="text" id="word" required><br>
-        <label for="definition">定義:</label>
-        <input type="text" id="definition" required><br>
-        <label for="examples">例文:</label>
-        <input type="text" id="examples"><br>
-        <label for="pronunciation">発音:</label>
-        <input type="text" id="pronunciation"><br>
-        <label for="tags">タグ:</label>
-        <input type="text" id="tags"><br>
-        <label for="pos">品詞:</label>
-        <input type="text" id="pos"><br>
-        <label for="relatedWords">関連語:</label>
-        <input type="text" id="relatedWords"><br>
-        <button type="button" onclick="addWord()">追加</button>
-    </form>
-    
-    <h2>検索</h2>
-    <input type="text" id="searchInput">
-    <button onclick="searchWords('complete')">完全一致検索</button>
-    <button onclick="searchWords('prefix')">前方一致検索</button>
-    <button onclick="searchWords('partial')">部分一致検索</button>
+    <div id="loginPanel">
+        <label for="userId">ユーザーID:</label>
+        <input type="text" id="userId"><br>
+        <label for="password">パスワード:</label>
+        <input type="password" id="password"><br>
+        <button onclick="login()">ログイン</button>
+    </div>
 
-    <div id="dictionaryEntries"></div>
-    
-    <button onclick="prevPage()">戻る</button>
-    <button onclick="nextPage()">進む</button>
+    <div id="app" style="display: none;">
+        <div id="userInfo"></div>
+        <h2>グループ</h2>
+        <div id="groupInfo"></div>
+
+        <p id="currentDictionary">現在の辞書: <span id="dictionaryName"></span></p>
+        <p>単語数: <span id="wordCount"></span></p>
+        <p>ページ: <span id="currentPage"></span></p>
+        
+        <input type="file" id="fontUpload" accept=".ttf,.otf,.woff">
+        <input type="file" id="otmJsonUpload" accept=".json">
+        <button onclick="uploadFont()">フォントアップロード</button>
+        <button onclick="uploadOtmJson()">OTM JSONアップロード</button>
+        <button onclick="saveDictionary()">辞書を保存</button>
+        <button onclick="logout()">ログアウト</button>
+
+        <h2>単語追加</h2>
+        <form id="addWordForm">
+            <label for="word">単語:</label>
+            <input type="text" id="word" required><br>
+            <label for="definition">定義:</label>
+            <input type="text" id="definition" required><br>
+            <label for="examples">例文:</label>
+            <input type="text" id="examples"><br>
+            <label for="pronunciation">発音:</label>
+            <input type="text" id="pronunciation"><br>
+            <label for="tags">タグ:</label>
+            <input type="text" id="tags"><br>
+            <label for="pos">品詞:</label>
+            <input type="text" id="pos"><br>
+            <label for="relatedWords">関連語:</label>
+            <input type="text" id="relatedWords"><br>
+            <button type="button" onclick="addWord()">追加</button>
+        </form>
+        
+        <h2>検索</h2>
+        <input type="text" id="searchInput">
+        <button onclick="searchWords('complete')">完全一致検索</button>
+        <button onclick="searchWords('prefix')">前方一致検索</button>
+        <button onclick="searchWords('partial')">部分一致検索</button>
+
+        <div id="dictionaryEntries"></div>
+        
+        <button onclick="prevPage()">戻る</button>
+        <button onclick="nextPage()">進む</button>
+    </div>
 
     <script>
         let dictionary = [];
         let currentPage = 1;
         const entriesPerPage = 20;
+        let loggedIn = false;
+        let currentUser = null;
+        let currentGroup = null;
+
+        function login() {
+            const userId = document.getElementById('userId').value;
+            const password = document.getElementById('password').value;
+
+            // ユーザー認証の実装 (仮)
+            if (userId && password) {
+                // 本来はここでユーザーとグループのデータを取得する処理を行う
+                currentUser = { id: userId };
+                currentGroup = { id: 'default', name: 'デフォルトグループ' };
+
+                loggedIn = true;
+                document.getElementById('loginPanel').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                document.getElementById('loginStatus').innerText = `ログイン中: ${userId}`;
+
+                // ユーザー情報とグループ情報の表示
+                displayUserInfo();
+                displayGroupInfo();
+            } else {
+                alert('ユーザーIDとパスワードを入力してください。');
+            }
+        }
+
+        function logout() {
+            loggedIn = false;
+            currentUser = null;
+            currentGroup = null;
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('loginPanel').style.display = 'block';
+            document.getElementById('loginStatus').innerText = '';
+        }
+
+        function displayUserInfo() {
+            const userInfoDiv = document.getElementById('userInfo');
+            if (currentUser) {
+                userInfoDiv.innerHTML = `
+                    <p>ユーザーID: ${currentUser.id}</p>
+                    <p>編集権限: ${currentUser.editPermission ? 'あり' : 'なし'}</p>
+                    <p>管理権限: ${currentUser.adminPermission ? 'あり' : 'なし'}</p>
+                `;
+            }
+        }
+
+        function displayGroupInfo() {
+            const groupInfoDiv = document.getElementById('groupInfo');
+            if (currentGroup) {
+                groupInfoDiv.innerHTML = `
+                    <p>グループID: ${currentGroup.id}</p>
+                    <p>グループ名: ${currentGroup.name}</p>
+                    <p>ICDE: ${currentGroup.icde}</p>
+                `;
+            }
+        }
 
         function uploadFont() {
             const fileInput = document.getElementById('fontUpload');
@@ -104,6 +183,11 @@
         }
 
         function addWord() {
+            if (!loggedIn) {
+                alert('ログインしてください。');
+                return;
+            }
+
             const word = document.getElementById('word').value;
             const definition = document.getElementById('definition').value;
             const examples = document.getElementById('examples').value.split(',');
@@ -145,53 +229,12 @@
             displayDictionary(filteredDictionary);
         }
 
-        function displayDictionary(filteredDictionary = dictionary) {
-            const dictionaryEntries = document.getElementById('dictionaryEntries');
-            dictionaryEntries.innerHTML = '';
-            const startIndex = (currentPage - 1) * entriesPerPage;
-            const endIndex = startIndex + entriesPerPage;
-            const currentEntries = filteredDictionary.slice(startIndex, endIndex);
-
-            currentEntries.forEach(entry => {
-                const entryDiv = document.createElement('div');
-                entryDiv.className = 'dictionary-entry';
-                entryDiv.innerHTML = `
-                    <h3>${entry.entry.form}</h3>
-                    <p>${entry.translations.map(t => t.forms.join(', ')).join('; ')}</p>
-                    <p>発音: ${entry.pronunciation || ''}</p>
-                    <p>タグ: ${entry.tags.join(', ')}</p>
-                    <p>品詞: ${entry.contents.map(c => c.title).join(', ')}</p>
-                    <div class="example">
-                        <p>例文:</p>
-                        ${entry.examples.map(example => `<p>${example}</p>`).join('')}
-                    </div>
-                `;
-                dictionaryEntries.appendChild(entryDiv);
-            });
-
-            document.getElementById('wordCount').innerText = filteredDictionary.length;
-            document.getElementById('currentPage').innerText = currentPage;
-        }
-
-        function prevPage() {
-            if (currentPage > 1) {
-                currentPage--;
-                displayDictionary();
-            }
-        }
-
-        function nextPage() {
-            if (currentPage * entriesPerPage < dictionary.length) {
-                currentPage++;
-                displayDictionary();
-            }
-        }
-
-        function generateId() {
-            return Math.floor(Math.random() * 1000000);
-        }
-
         function saveDictionary() {
+            if (!loggedIn) {
+                alert('ログインしてください。');
+                return;
+            }
+
             const data = {
                 words: dictionary,
                 version: 2,
@@ -215,15 +258,52 @@
             URL.revokeObjectURL(url);
         }
 
-        function generateAccount() {
-            const id = generateId();
-            const password = Math.random().toString(36).slice(-8);
-            alert(`アカウントID: ${id}\nパスワード: ${password}`);
+        function displayDictionary(entries = dictionary) {
+            const dictionaryEntriesDiv = document.getElementById('dictionaryEntries');
+            dictionaryEntriesDiv.innerHTML = '';
+
+            entries.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage).forEach(entry => {
+                const entryDiv = document.createElement('div');
+                entryDiv.classList.add('dictionary-entry');
+
+                const entryContent = `
+                    <h3>${entry.entry.form}</h3>
+                    <p>${entry.translations.map(translation => translation.forms.join(', ')).join('<br>')}</p>
+                    <div class="example">${entry.contents.map(content => content.text).join('<br>')}</div>
+                    <p>${entry.tags.join(', ')}</p>
+                    <p>関連語: ${entry.relations.map(relation => relation.entry.form).join(', ')}</p>
+                `;
+                entryDiv.innerHTML = entryContent;
+
+                dictionaryEntriesDiv.appendChild(entryDiv);
+            });
+
+            document.getElementById('wordCount').innerText = dictionary.length;
+            document.getElementById('currentPage').innerText = currentPage;
+            document.getElementById('dictionaryName').innerText = 'デフォルト辞書';
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayDictionary();
+            }
+        }
+
+        function nextPage() {
+            const maxPage = Math.ceil(dictionary.length / entriesPerPage);
+            if (currentPage < maxPage) {
+                currentPage++;
+                displayDictionary();
+            }
+        }
+
+        function generateId() {
+            return Math.floor(Math.random() * 100000);
         }
 
         // 初期表示
         displayDictionary();
-        generateAccount();
     </script>
 </body>
 </html>
