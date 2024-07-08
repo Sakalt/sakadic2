@@ -17,13 +17,13 @@
             text-align: center;
             margin: 20px;
         }
-        #search-input, #new-word-input, #new-translation-input, #new-definition-input, #new-examples-input, #new-variations-input, #new-pronunciation-input, #new-related-words-input {
+        #search-input, #new-word-input, #new-translation-input, #new-definition-input, #new-examples-input, #new-variations-input, #new-pronunciation-input, #new-related-words-input, #new-dictionary-name-input {
             width: 80%;
             padding: 10px;
             font-size: 16px;
             margin: 5px;
         }
-        #search-options button, #add-word-button, #export-json-button {
+        #search-options button, #add-word-button, #export-json-button, #create-dictionary-button, #select-dictionary-button {
             background-color: #00aa00;
             color: white;
             border: none;
@@ -47,6 +47,14 @@
 <body>
     <div id="dictionary">
         <h1>架空言語辞書</h1>
+        <div id="dictionary-selector">
+            <h2>辞書を選択または新規作成</h2>
+            <input type="text" id="new-dictionary-name-input" placeholder="新しい辞書名">
+            <button id="create-dictionary-button" onclick="createDictionary()">新規作成</button>
+            <select id="select-dictionary" onchange="selectDictionary()">
+                <option value="">辞書を選択</option>
+            </select>
+        </div>
         <div id="search-container">
             <input type="text" id="search-input" placeholder="単語を検索...">
             <div id="search-options">
@@ -85,11 +93,35 @@
         </div>
     </div>
     <script>
-        let dictionaryData = [];
+        let dictionaries = {};
+        let currentDictionary = '';
         const resultsPerPage = 20;
         let currentPage = 1;
         let searchMode = 'exact';
-        let filteredData = dictionaryData;
+        let filteredData = [];
+
+        function createDictionary() {
+            const dictionaryName = document.getElementById('new-dictionary-name-input').value.trim();
+            if (dictionaryName && !dictionaries[dictionaryName]) {
+                dictionaries[dictionaryName] = [];
+                const select = document.getElementById('select-dictionary');
+                const option = document.createElement('option');
+                option.value = dictionaryName;
+                option.textContent = dictionaryName;
+                select.appendChild(option);
+                select.value = dictionaryName;
+                selectDictionary();
+            }
+        }
+
+        function selectDictionary() {
+            currentDictionary = document.getElementById('select-dictionary').value;
+            if (currentDictionary) {
+                filteredData = dictionaries[currentDictionary];
+                currentPage = 1;
+                displayDictionary(currentPage);
+            }
+        }
 
         function displayDictionary(page) {
             const dictionaryDataDiv = document.getElementById('dictionary-data');
@@ -123,9 +155,9 @@
         function searchDictionary() {
             const searchInput = document.getElementById('search-input').value.toLowerCase();
             if (!searchInput) {
-                filteredData = dictionaryData;
+                filteredData = dictionaries[currentDictionary];
             } else {
-                filteredData = dictionaryData.filter(entry => {
+                filteredData = dictionaries[currentDictionary].filter(entry => {
                     if (searchMode === 'exact') {
                         return entry.word.toLowerCase() === searchInput;
                     } else if (searchMode === 'starts-with') {
@@ -162,8 +194,8 @@
             const pronunciation = document.getElementById('new-pronunciation-input').value;
             const relatedWords = document.getElementById('new-related-words-input').value.split(',').map(e => e.trim());
 
-            if (word && translation && definition) {
-                dictionaryData.push({
+            if (word && translation && definition && currentDictionary) {
+                dictionaries[currentDictionary].push({
                     word,
                     translation,
                     definition,
@@ -183,13 +215,13 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const fontFace = new FontFace('UploadedFont', e.target.result);
+                    const fontFace = new FontFace('UploadedFont', `url(${e.target.result})`);
                     fontFace.load().then(function(loadedFont) {
                         document.fonts.add(loadedFont);
                         document.body.style.fontFamily = 'UploadedFont, Maru Gothic, sans-serif';
                     });
                 };
-                reader.readAsArrayBuffer(file);
+                reader.readAsDataURL(file);
             }
         }
 
@@ -199,22 +231,26 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const jsonData = JSON.parse(e.target.result);
-                    dictionaryData = jsonData.words;
-                    filteredData = dictionaryData;
-                    displayDictionary(currentPage);
+                    if (currentDictionary) {
+                        dictionaries[currentDictionary] = jsonData.words;
+                        filteredData = dictionaries[currentDictionary];
+                        displayDictionary(currentPage);
+                    }
                 };
                 reader.readAsText(file);
             }
         }
 
         function exportToJson() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ words: dictionaryData }));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "dictionary.json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
+            if (currentDictionary) {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ words: dictionaries[currentDictionary] }));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", `${currentDictionary}.json`);
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            }
         }
     </script>
 </body>
