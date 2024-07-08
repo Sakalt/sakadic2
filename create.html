@@ -1,0 +1,24 @@
+<!-- Dictionary Creation Section -->
+<div class="dictionary-creation">
+    <h2>新しい辞書を作成</h2>
+    <input type="text" id="new-dictionary-name" placeholder="新しい辞書名">
+    <button onclick="createDictionary()">作成</button>
+</div>
+
+<script>
+    function createDictionary() {
+        const newDictionaryName = document.getElementById("new-dictionary-name").value.trim();
+        if (newDictionaryName) {
+            // Logic to create a new dictionary (replace with actual implementation)
+            alert(`新しい辞書「${newDictionaryName}」を作成しました。`);
+            // Optionally, update the select element with the new dictionary
+            const selectElement = document.getElementById("dictionary-select");
+            const option = document.createElement("option");
+            option.value = "new-dictionary-id"; // Replace with actual ID if applicable
+            option.textContent = newDictionaryName;
+            selectElement.appendChild(option);
+        } else {
+            alert("辞書名を入力してください。");
+        }
+    }
+</script>
