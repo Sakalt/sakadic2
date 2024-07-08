@@ -52,6 +52,10 @@
         <input type="text" id="examples"><br>
         <label for="pronunciation">発音:</label>
         <input type="text" id="pronunciation"><br>
+        <label for="tags">タグ:</label>
+        <input type="text" id="tags"><br>
+        <label for="pos">品詞:</label>
+        <input type="text" id="pos"><br>
         <label for="relatedWords">関連語:</label>
         <input type="text" id="relatedWords"><br>
         <button type="button" onclick="addWord()">追加</button>
@@ -93,7 +97,7 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 const data = JSON.parse(e.target.result);
-                dictionary = data;
+                dictionary = data.words;
                 displayDictionary();
             };
             reader.readAsText(file);
@@ -104,14 +108,20 @@
             const definition = document.getElementById('definition').value;
             const examples = document.getElementById('examples').value.split(',');
             const pronunciation = document.getElementById('pronunciation').value;
-            const relatedWords = document.getElementById('relatedWords').value.split(',');
+            const tags = document.getElementById('tags').value.split(',');
+            const pos = document.getElementById('pos').value;
+            const relatedWords = document.getElementById('relatedWords').value.split(',').map(word => ({ form: word.trim(), id: generateId() }));
 
             const newEntry = {
-                word,
-                definition,
-                examples,
-                pronunciation,
-                relatedWords
+                entry: {
+                    id: generateId(),
+                    form: word
+                },
+                translations: [{ title: "definition", forms: [definition] }],
+                tags,
+                contents: [{ title: pos, text: definition }],
+                variations: [],
+                relations: relatedWords.map(word => ({ title: "related", entry: word }))
             };
             dictionary.push(newEntry);
             displayDictionary();
@@ -123,13 +133,13 @@
 
             switch (type) {
                 case 'complete':
-                    filteredDictionary = dictionary.filter(entry => entry.word.toLowerCase() === searchInput);
+                    filteredDictionary = dictionary.filter(entry => entry.entry.form.toLowerCase() === searchInput);
                     break;
                 case 'prefix':
-                    filteredDictionary = dictionary.filter(entry => entry.word.toLowerCase().startsWith(searchInput));
+                    filteredDictionary = dictionary.filter(entry => entry.entry.form.toLowerCase().startsWith(searchInput));
                     break;
                 case 'partial':
-                    filteredDictionary = dictionary.filter(entry => entry.word.toLowerCase().includes(searchInput));
+                    filteredDictionary = dictionary.filter(entry => entry.entry.form.toLowerCase().includes(searchInput));
                     break;
             }
             displayDictionary(filteredDictionary);
@@ -146,10 +156,11 @@
                 const entryDiv = document.createElement('div');
                 entryDiv.className = 'dictionary-entry';
                 entryDiv.innerHTML = `
-                    <h3>${entry.word}</h3>
-                    <p>${entry.definition}</p>
-                    <p>発音: ${entry.pronunciation}</p>
-                    <p>関連語: ${entry.relatedWords.join(', ')}</p>
+                    <h3>${entry.entry.form}</h3>
+                    <p>${entry.translations.map(t => t.forms.join(', ')).join('; ')}</p>
+                    <p>発音: ${entry.pronunciation || ''}</p>
+                    <p>タグ: ${entry.tags.join(', ')}</p>
+                    <p>品詞: ${entry.contents.map(c => c.title).join(', ')}</p>
                     <div class="example">
                         <p>例文:</p>
                         ${entry.examples.map(example => `<p>${example}</p>`).join('')}
@@ -176,8 +187,43 @@
             }
         }
 
+        function generateId() {
+            return Math.floor(Math.random() * 1000000);
+        }
+
+        function saveDictionary() {
+            const data = {
+                words: dictionary,
+                version: 2,
+                settings: {
+                    zpdic: {
+                        punctuationTitle: "punctuations",
+                        pronunciationTitle: "発音"
+                    },
+                    zpdicOnline: {
+                        explanation: "これは架空言語の辞書です。",
+                        enableMarkdown: false
+                    }
+                }
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'dictionary.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function generateAccount() {
+            const id = generateId();
+            const password = Math.random().toString(36).slice(-8);
+            alert(`アカウントID: ${id}\nパスワード: ${password}`);
+        }
+
         // 初期表示
         displayDictionary();
+        generateAccount();
     </script>
 </body>
 </html>
