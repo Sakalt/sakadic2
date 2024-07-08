@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>識別</title>
+    <style>
+        body {
+            font-family: 'Maru Gothic', sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .identification {
+            width: 60%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+        }
+        .identification-title {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .identification-content {
+            margin-bottom: 10px;
+        }
+        .dictionary-selector {
+            margin-bottom: 20px;
+        }
+        .dictionary-option {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="identification">
+        <h1 class="identification-title">識別</h1>
+        
+        <!-- Dictionary Selection -->
+        <div class="dictionary-selector">
+            <label for="dictionary-select">辞書を選択:</label>
+            <select id="dictionary-select" class="dictionary-option">
+                <!-- Options will be populated dynamically using JavaScript -->
+            </select>
+        </div>
+
+        <!-- Content Display Area -->
+        <div id="dictionary-content">
+            <!-- Content specific to the selected dictionary will be displayed here -->
+        </div>
+
+    </div>
+
+    <!-- Script for dynamic population of dictionary options and content display -->
+    <script>
+        // Dummy function to populate dictionaries (replace with actual data and logic)
+        function populateDictionaries() {
+            const dictionaries = [
+                { id: 1, name: "Dictionary 1" },
+                { id: 2, name: "Dictionary 2" },
+                { id: 3, name: "Dictionary 3" }
+            ];
+
+            const selectElement = document.getElementById("dictionary-select");
+
+            dictionaries.forEach(dictionary => {
+                const option = document.createElement("option");
+                option.value = dictionary.id;
+                option.textContent = dictionary.name;
+                selectElement.appendChild(option);
+            });
+
+            // Add event listener for dictionary selection
+            selectElement.addEventListener("change", function() {
+                const selectedDictionaryId = parseInt(this.value);
+                displayDictionaryContent(selectedDictionaryId);
+            });
+        }
+
+        // Dummy function to display content for selected dictionary (replace with actual logic)
+        function displayDictionaryContent(dictionaryId) {
+            const dictionaryContentDiv = document.getElementById("dictionary-content");
+            dictionaryContentDiv.innerHTML = `
+                <p>辞書 ${dictionaryId} のコンテンツを表示します。</p>
+                <!-- Add actual content display logic here -->
+            `;
+        }
+
+        // Call function to populate dictionaries on page load
+        document.addEventListener("DOMContentLoaded", function() {
+            populateDictionaries();
+        });
+    </script>
+
+</body>
+</html>
