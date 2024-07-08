@@ -2,287 +2,182 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>架空言語辞書</title>
+    <title>架空言語辞書アプリ</title>
     <style>
         body {
-            font-family: 'Maru Gothic', sans-serif;
-            background-color: #f4f4f4;
+            font-family: "Maru Gothic", sans-serif;
         }
-        #dictionary {
-            width: 60%;
-            margin: 0 auto;
-        }
-        #search-container, #add-word-container, #font-upload-container, #otm-upload-container {
-            text-align: center;
-            margin: 20px;
-        }
-        #search-input, #new-word-input, #new-translation-input, #new-definition-input, #new-examples-input, #new-variations-input, #new-pronunciation-input, #new-related-words-input, #new-dictionary-name-input {
-            width: 80%;
+        .dictionary-entry {
+            border: 1px solid #009999;
+            background-color: #00BBBB;
+            margin: 10px;
             padding: 10px;
-            font-size: 16px;
-            margin: 5px;
         }
-        #search-options button, #add-word-button, #export-json-button, #create-dictionary-button, #select-dictionary-button, .edit-word-button, .delete-word-button {
+        .dictionary-entry h3 {
+            font-family: "Maru Gothic", sans-serif;
+        }
+        .example {
+            border: 1px solid #009999;
+            background-color: #00BBBB;
+            padding: 5px;
+            margin-top: 5px;
+        }
+        button {
             background-color: #00aa00;
             color: white;
             border: none;
             padding: 10px 20px;
-            margin: 5px;
             cursor: pointer;
-        }
-        #dictionary-data {
-            text-align: left;
-            margin: 20px;
-        }
-        #page-controls {
-            text-align: center;
-            margin: 20px;
-        }
-        .hidden {
-            display: none;
-        }
-        .word-entry {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin: 10px 0;
-            background-color: #fff;
         }
     </style>
 </head>
 <body>
-    <div id="dictionary">
-        <h1>架空言語辞書</h1>
-        <div id="dictionary-selector">
-            <h2>辞書を選択または新規作成</h2>
-            <input type="text" id="new-dictionary-name-input" placeholder="新しい辞書名">
-            <button id="create-dictionary-button" onclick="createDictionary()">新規作成</button>
-            <select id="select-dictionary" onchange="selectDictionary()">
-                <option value="">辞書を選択</option>
-            </select>
-        </div>
-        <div id="search-container">
-            <input type="text" id="search-input" placeholder="単語を検索...">
-            <div id="search-options">
-                <button onclick="setSearchMode('exact')">完全一致</button>
-                <button onclick="setSearchMode('starts-with')">前方一致</button>
-                <button onclick="setSearchMode('contains')">部分一致</button>
-            </div>
-        </div>
-        <div id="add-word-container">
-            <h2>新しい単語を追加</h2>
-            <input type="text" id="new-word-input" placeholder="単語">
-            <input type="text" id="new-translation-input" placeholder="翻訳">
-            <input type="text" id="new-definition-input" placeholder="定義">
-            <input type="text" id="new-examples-input" placeholder="例文（カンマで区切る）">
-            <input type="text" id="new-variations-input" placeholder="変化形（カンマで区切る）">
-            <input type="text" id="new-pronunciation-input" placeholder="発音">
-            <input type="text" id="new-related-words-input" placeholder="関連語（カンマで区切る）">
-            <button id="add-word-button" onclick="addWord()">追加</button>
-        </div>
-        <div id="font-upload-container">
-            <label for="font-upload">フォントをアップロード:</label>
-            <input type="file" id="font-upload" accept=".ttf,.otf">
-            <button onclick="loadFont()">フォントを読み込む</button>
-        </div>
-        <div id="otm-upload-container">
-            <label for="otm-upload">OTM-jsonをインポート:</label>
-            <input type="file" id="otm-upload" accept=".json">
-            <button onclick="importOTMJson()">OTM-jsonを読み込む</button>
-        </div>
-        <div id="dictionary-data"></div>
-        <div id="page-controls">
-            <button id="prevButton" onclick="prevPage()" disabled>前のページ</button>
-            <span id="page-info"></span>
-            <button id="nextButton" onclick="nextPage()">次のページ</button>
-        </div>
-        <div id="export-json-container" style="text-align: center; margin: 20px;">
-            <button id="export-json-button" onclick="exportToJson()">JSONとしてエクスポート</button>
-        </div>
-    </div>
+    <h1>架空言語辞書アプリ</h1>
+    <p id="currentDictionary">現在の辞書: <span id="dictionaryName"></span></p>
+    <p>単語数: <span id="wordCount"></span></p>
+    <p>ページ: <span id="currentPage"></span></p>
+    
+    <input type="file" id="fontUpload" accept=".ttf,.otf">
+    <input type="file" id="otmJsonUpload" accept=".json">
+    <button onclick="uploadFont()">フォントアップロード</button>
+    <button onclick="uploadOtmJson()">OTM JSONアップロード</button>
+
+    <h2>単語追加</h2>
+    <form id="addWordForm">
+        <label for="word">単語:</label>
+        <input type="text" id="word" required><br>
+        <label for="definition">定義:</label>
+        <input type="text" id="definition" required><br>
+        <label for="examples">例文:</label>
+        <input type="text" id="examples"><br>
+        <label for="pronunciation">発音:</label>
+        <input type="text" id="pronunciation"><br>
+        <label for="relatedWords">関連語:</label>
+        <input type="text" id="relatedWords"><br>
+        <button type="button" onclick="addWord()">追加</button>
+    </form>
+    
+    <h2>検索</h2>
+    <input type="text" id="searchInput">
+    <button onclick="searchWords('complete')">完全一致検索</button>
+    <button onclick="searchWords('prefix')">前方一致検索</button>
+    <button onclick="searchWords('partial')">部分一致検索</button>
+
+    <div id="dictionaryEntries"></div>
+    
+    <button onclick="prevPage()">戻る</button>
+    <button onclick="nextPage()">進む</button>
+
     <script>
-        let dictionaries = {};
-        let currentDictionary = '';
-        const resultsPerPage = 20;
+        let dictionary = [];
         let currentPage = 1;
-        let searchMode = 'exact';
-        let filteredData = [];
+        const entriesPerPage = 20;
 
-        function createDictionary() {
-            const dictionaryName = document.getElementById('new-dictionary-name-input').value.trim();
-            if (dictionaryName && !dictionaries[dictionaryName]) {
-                dictionaries[dictionaryName] = [];
-                const select = document.getElementById('select-dictionary');
-                const option = document.createElement('option');
-                option.value = dictionaryName;
-                option.textContent = dictionaryName;
-                select.appendChild(option);
-                select.value = dictionaryName;
-                selectDictionary();
-            }
+        function uploadFont() {
+            const fileInput = document.getElementById('fontUpload');
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fontFace = new FontFace('UploadedFont', e.target.result);
+                document.fonts.add(fontFace);
+                fontFace.load().then(() => {
+                    document.body.style.fontFamily = 'UploadedFont, sans-serif';
+                });
+            };
+            reader.readAsArrayBuffer(file);
         }
 
-        function selectDictionary() {
-            currentDictionary = document.getElementById('select-dictionary').value;
-            if (currentDictionary) {
-                filteredData = dictionaries[currentDictionary];
-                currentPage = 1;
-                displayDictionary(currentPage);
-            }
+        function uploadOtmJson() {
+            const fileInput = document.getElementById('otmJsonUpload');
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = JSON.parse(e.target.result);
+                dictionary = data;
+                displayDictionary();
+            };
+            reader.readAsText(file);
         }
 
-        function displayDictionary(page) {
-            const dictionaryDataDiv = document.getElementById('dictionary-data');
-            dictionaryDataDiv.innerHTML = '';
+        function addWord() {
+            const word = document.getElementById('word').value;
+            const definition = document.getElementById('definition').value;
+            const examples = document.getElementById('examples').value.split(',');
+            const pronunciation = document.getElementById('pronunciation').value;
+            const relatedWords = document.getElementById('relatedWords').value.split(',');
 
-            const startIndex = (page - 1) * resultsPerPage;
-            const endIndex = startIndex + resultsPerPage;
-            const pageData = filteredData.slice(startIndex, endIndex);
+            const newEntry = {
+                word,
+                definition,
+                examples,
+                pronunciation,
+                relatedWords
+            };
+            dictionary.push(newEntry);
+            displayDictionary();
+        }
 
-            pageData.forEach((entry, index) => {
+        function searchWords(type) {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            let filteredDictionary = [];
+
+            switch (type) {
+                case 'complete':
+                    filteredDictionary = dictionary.filter(entry => entry.word.toLowerCase() === searchInput);
+                    break;
+                case 'prefix':
+                    filteredDictionary = dictionary.filter(entry => entry.word.toLowerCase().startsWith(searchInput));
+                    break;
+                case 'partial':
+                    filteredDictionary = dictionary.filter(entry => entry.word.toLowerCase().includes(searchInput));
+                    break;
+            }
+            displayDictionary(filteredDictionary);
+        }
+
+        function displayDictionary(filteredDictionary = dictionary) {
+            const dictionaryEntries = document.getElementById('dictionaryEntries');
+            dictionaryEntries.innerHTML = '';
+            const startIndex = (currentPage - 1) * entriesPerPage;
+            const endIndex = startIndex + entriesPerPage;
+            const currentEntries = filteredDictionary.slice(startIndex, endIndex);
+
+            currentEntries.forEach(entry => {
                 const entryDiv = document.createElement('div');
-                entryDiv.className = 'word-entry';
+                entryDiv.className = 'dictionary-entry';
                 entryDiv.innerHTML = `
-                    <h3>${entry.word} (${entry.translation})</h3>
+                    <h3>${entry.word}</h3>
                     <p>${entry.definition}</p>
-                    <p>例文: ${entry.examples.join(', ')}</p>
-                    <p>変化形: ${entry.variations.join(', ')}</p>
                     <p>発音: ${entry.pronunciation}</p>
                     <p>関連語: ${entry.relatedWords.join(', ')}</p>
-                    <button class="edit-word-button" onclick="editWord(${startIndex + index})">編集</button>
-                    <button class="delete-word-button" onclick="deleteWord(${startIndex + index})">削除</button>
+                    <div class="example">
+                        <p>例文:</p>
+                        ${entry.examples.map(example => `<p>${example}</p>`).join('')}
+                    </div>
                 `;
-                dictionaryDataDiv.appendChild(entryDiv);
+                dictionaryEntries.appendChild(entryDiv);
             });
 
-            document.getElementById('page-info').innerText = `Page ${page} of ${Math.ceil(filteredData.length / resultsPerPage)}`;
-            document.getElementById('prevButton').disabled = page === 1;
-            document.getElementById('nextButton').disabled = page >= Math.ceil(filteredData.length / resultsPerPage);
-        }
-
-        function setSearchMode(mode) {
-            searchMode = mode;
-            searchDictionary();
-        }
-
-        function searchDictionary() {
-            const searchInput = document.getElementById('search-input').value.toLowerCase();
-            if (!searchInput) {
-                filteredData = dictionaries[currentDictionary];
-            } else {
-                filteredData = dictionaries[currentDictionary].filter(entry => {
-                    if (searchMode === 'exact') {
-                        return entry.word.toLowerCase() === searchInput;
-                    } else if (searchMode === 'starts-with') {
-                        return entry.word.toLowerCase().startsWith(searchInput);
-                    } else if (searchMode === 'contains') {
-                        return entry.word.toLowerCase().includes(searchInput);
-                    }
-                });
-            }
-            currentPage = 1;
-            displayDictionary(currentPage);
+            document.getElementById('wordCount').innerText = filteredDictionary.length;
+            document.getElementById('currentPage').innerText = currentPage;
         }
 
         function prevPage() {
             if (currentPage > 1) {
                 currentPage--;
-                displayDictionary(currentPage);
+                displayDictionary();
             }
         }
 
         function nextPage() {
-            if (currentPage < Math.ceil(filteredData.length / resultsPerPage)) {
+            if (currentPage * entriesPerPage < dictionary.length) {
                 currentPage++;
-                displayDictionary(currentPage);
+                displayDictionary();
             }
         }
 
-        function addWord() {
-            const word = document.getElementById('new-word-input').value;
-            const translation = document.getElementById('new-translation-input').value;
-            const definition = document.getElementById('new-definition-input').value;
-            const examples = document.getElementById('new-examples-input').value.split(',').map(e => e.trim());
-            const variations = document.getElementById('new-variations-input').value.split(',').map(v => v.trim());
-            const pronunciation = document.getElementById('new-pronunciation-input').value;
-            const relatedWords = document.getElementById('new-related-words-input').value.split(',').map(rw => rw.trim());
-
-            if (currentDictionary && word && translation) {
-                dictionaries[currentDictionary].push({
-                    word,
-                    translation,
-                    definition,
-                    examples,
-                    variations,
-                    pronunciation,
-                    relatedWords
-                });
-                searchDictionary();
-            }
-        }
-
-        function editWord(index) {
-            const word = dictionaries[currentDictionary][index];
-            document.getElementById('new-word-input').value = word.word;
-            document.getElementById('new-translation-input').value = word.translation;
-            document.getElementById('new-definition-input').value = word.definition;
-            document.getElementById('new-examples-input').value = word.examples.join(', ');
-            document.getElementById('new-variations-input').value = word.variations.join(', ');
-            document.getElementById('new-pronunciation-input').value = word.pronunciation;
-            document.getElementById('new-related-words-input').value = word.relatedWords.join(', ');
-
-            deleteWord(index);
-        }
-
-        function deleteWord(index) {
-            dictionaries[currentDictionary].splice(index, 1);
-            searchDictionary();
-        }
-
-        function loadFont() {
-            const fontInput = document.getElementById('font-upload');
-            const file = fontInput.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const fontFace = new FontFace('UploadedFont', `url(${e.target.result})`);
-                    fontFace.load().then(function(loadedFont) {
-                        document.fonts.add(loadedFont);
-                        document.body.style.fontFamily = 'UploadedFont, Maru Gothic, sans-serif';
-                    });
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function importOTMJson() {
-            const otmInput = document.getElementById('otm-upload');
-            const file = otmInput.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const jsonData = JSON.parse(e.target.result);
-                    if (currentDictionary) {
-                        dictionaries[currentDictionary] = jsonData.words;
-                        filteredData = dictionaries[currentDictionary];
-                        displayDictionary(currentPage);
-                    }
-                };
-                reader.readAsText(file);
-            }
-        }
-
-        function exportToJson() {
-            if (currentDictionary) {
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ words: dictionaries[currentDictionary] }));
-                const downloadAnchorNode = document.createElement('a');
-                downloadAnchorNode.setAttribute("href", dataStr);
-                downloadAnchorNode.setAttribute("download", `${currentDictionary}.json`);
-                document.body.appendChild(downloadAnchorNode);
-                downloadAnchorNode.click();
-                downloadAnchorNode.remove();
-            }
-        }
+        // 初期表示
+        displayDictionary();
     </script>
 </body>
 </html>
