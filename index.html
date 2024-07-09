@@ -49,8 +49,8 @@
             background-color: #fff;
         }
         .fictional-language {
-        font-family: 'UploadedFont', sans-serif;
-    }
+            font-family: 'UploadedFont', sans-serif;
+        }
         .example-sentence {
             border: 2px solid #009999;
             background-color: #00BBBB;
@@ -58,6 +58,7 @@
             margin-top: 10px;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <div id="dictionary">
@@ -67,7 +68,6 @@
             <input type="text" id="new-dictionary-name-input" placeholder="新しい辞書名">
             <button id="create-dictionary-button" onclick="createDictionary()">新規作成</button>
             <select id="select-dictionary" onchange="selectDictionary()">
-                <script src="scripts/save.js" defer></script>
                 <option value="">辞書を選択</option>
             </select>
         </div>
@@ -139,7 +139,10 @@
         }
 
         // ページ読み込み時にログインする
-        window.onload = login;
+        window.onload = function() {
+            loadDictionary();
+            login();
+        };
 
         let dictionaries = {};
         let currentDictionary = '';
@@ -149,17 +152,6 @@
         let filteredData = [];
 
         // ページ読み込み時に保存された辞書データを読み込む
-        window.onload = function() {
-            loadDictionary();
-            login();
-        };
-
-        // 辞書データをローカルストレージに保存する
-        function saveDictionary() {
-            localStorage.setItem('dictionaries', JSON.stringify(dictionaries));
-        }
-
-        // ローカルストレージから辞書データを読み込む
         function loadDictionary() {
             const savedData = localStorage.getItem('dictionaries');
             if (savedData) {
@@ -177,10 +169,26 @@
             }
         }
 
+        // 辞書データをローカルストレージに保存する
+        function saveDictionary() {
+            localStorage.setItem('dictionaries', JSON.stringify(dictionaries));
+        }
+
         function createDictionary() {
             const dictionaryName = document.getElementById('new-dictionary-name-input').value.trim();
             if (dictionaryName && !dictionaries[dictionaryName]) {
-                dictionaries[dictionaryName] = [];
+                dictionaries[dictionaryName] = {
+                    words: [],
+                    version: 2,
+                    settings: {
+                        zpdic: {
+                            pronunciationTitle: "発音"
+                        },
+                        zpdicOnline: {
+                            enableMarkdown: true
+                        }
+                    }
+                };
                 const select = document.getElementById('select-dictionary');
                 const option = document.createElement('option');
                 option.value = dictionaryName;
@@ -195,7 +203,7 @@
         function selectDictionary() {
             currentDictionary = document.getElementById('select-dictionary').value;
             if (currentDictionary) {
-                filteredData = dictionaries[currentDictionary];
+                filteredData = dictionaries[currentDictionary].words;
                 currentPage = 1;
                 displayDictionary(currentPage);
             }
@@ -211,51 +219,64 @@
 
             pageData.forEach((entry, index) => {
                 const entryDiv = document.createElement('div');
-                entryDiv.className = 'word-entry';
-                entryDiv.innerHTML = `
-                    <h3>${entry.word} (${entry.translation})</h3>
-                    <p>${entry.definition}</p>
-                    <div class="example-sentence">
-                        <span class="fictional-language">${entry.examples.join(', ')}</span>
-                        <br>
-                        <span>${entry.japaneseExamples.join(', ')}</span>
-                    </div>
-                    <p>変化形: ${entry.variations.join(', ')}</p>
-                    <p>発音: ${entry.pronunciation}</p>
-                    <p>関連語: ${entry.relatedWords.join(', ')}</p>
-                    <button class="edit-word-button" onclick="editWord(${startIndex + index})">編集</button>
-                    <button class="delete-word-button" onclick="deleteWord(${startIndex + index})">削除</button>
-                `;
+                entryDiv.classList.add('word-entry');
+
+                const wordHeading = document.createElement('h3');
+                wordHeading.textContent = entry.entry.form;
+                wordHeading.classList.add('fictional-language');
+                entryDiv.appendChild(wordHeading);
+
+                entry.translations.forEach(translation => {
+                    const translationDiv = document.createElement('div');
+                    translationDiv.textContent = `${translation.title}: ${translation.forms.join(', ')}`;
+                    entryDiv.appendChild(translationDiv);
+                });
+
+                entry.contents.forEach(content => {
+                    const contentDiv = document.createElement('div');
+                    contentDiv.textContent = `${content.title}: ${content.text}`;
+                    entryDiv.appendChild(contentDiv);
+
+                    if (dictionaries[currentDictionary].settings.zpdicOnline.enableMarkdown && content.markdown) {
+                        const markdownDiv = document.createElement('div');
+                        markdownDiv.innerHTML = marked(content.markdown);
+                        entryDiv.appendChild(markdownDiv);
+                    }
+                });
+
+                const variations = document.createElement('div');
+                variations.textContent = `変化形: ${entry.variations.map(variation => variation.form).join(', ')}`;
+                entryDiv.appendChild(variations);
+
+                const relatedWords = document.createElement('div');
+                relatedWords.textContent = `関連語: ${entry.relations.map(relation => relation.entry.form).join(', ')}`;
+                entryDiv.appendChild(relatedWords);
+
+                entryDiv.appendChild(document.createElement('hr'));
+
+                const editButton = document.createElement('button');
+                editButton.textContent = '編集';
+                editButton.classList.add('edit-word-button');
+                editButton.onclick = () => editWord(startIndex + index);
+                entryDiv.appendChild(editButton);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '削除';
+                deleteButton.classList.add('delete-word-button');
+                deleteButton.onclick = () => deleteWord(startIndex + index);
+                entryDiv.appendChild(deleteButton);
+
                 dictionaryDataDiv.appendChild(entryDiv);
             });
 
-            document.getElementById('page-info').innerText = `Page ${page} of ${Math.ceil(filteredData.length / resultsPerPage)}`;
-            document.getElementById('prevButton').disabled = page === 1;
-            document.getElementById('nextButton').disabled = page >= Math.ceil(filteredData.length / resultsPerPage);
+            updatePageControls();
         }
 
-        function setSearchMode(mode) {
-            searchMode = mode;
-            searchDictionary();
-        }
-
-        function searchDictionary() {
-            const searchInput = document.getElementById('search-input').value.toLowerCase();
-            if (!searchInput) {
-                filteredData = dictionaries[currentDictionary];
-            } else {
-                filteredData = dictionaries[currentDictionary].filter(entry => {
-                    if (searchMode === 'exact') {
-                        return entry.word.toLowerCase() === searchInput;
-                    } else if (searchMode === 'starts-with') {
-                        return entry.word.toLowerCase().startsWith(searchInput);
-                    } else if (searchMode === 'contains') {
-                        return entry.word.toLowerCase().includes(searchInput);
-                    }
-                });
-            }
-            currentPage = 1;
-            displayDictionary(currentPage);
+        function updatePageControls() {
+            const totalPages = Math.ceil(filteredData.length / resultsPerPage);
+            document.getElementById('page-info').textContent = `${currentPage} / ${totalPages}`;
+            document.getElementById('prevButton').disabled = currentPage === 1;
+            document.getElementById('nextButton').disabled = currentPage === totalPages;
         }
 
         function prevPage() {
@@ -266,7 +287,8 @@
         }
 
         function nextPage() {
-            if (currentPage * resultsPerPage < filteredData.length) {
+            const totalPages = Math.ceil(filteredData.length / resultsPerPage);
+            if (currentPage < totalPages) {
                 currentPage++;
                 displayDictionary(currentPage);
             }
@@ -277,103 +299,146 @@
             const newTranslation = document.getElementById('new-translation-input').value.trim();
             const newDefinition = document.getElementById('new-definition-input').value.trim();
             const newExamples = document.getElementById('new-examples-input').value.split(',').map(e => e.trim());
-            const newVariations = document.getElementById('new-variations-input').value.split(',').map(v => v.trim());
+            const newVariations = document.getElementById('new-variations-input').value.split(',').map(e => e.trim());
             const newPronunciation = document.getElementById('new-pronunciation-input').value.trim();
-            const newRelatedWords = document.getElementById('new-related-words-input').value.split(',').map(rw => rw.trim());
-            const newJapaneseExamples = newExamples.map(e => translateToJapanese(e));
+            const newRelatedWords = document.getElementById('new-related-words-input').value.split(',').map(e => e.trim());
 
             if (newWord && newTranslation && currentDictionary) {
-                const newEntry = {
-                    word: newWord,
-                    translation: newTranslation,
-                    definition: newDefinition,
-                    examples: newExamples,
-                    variations: newVariations,
-                    pronunciation: newPronunciation,
-                    relatedWords: newRelatedWords,
-                    japaneseExamples: newJapaneseExamples
-                };
-                dictionaries[currentDictionary].push(newEntry);
-                saveDictionary(); // 単語追加後に保存
-                searchDictionary();
-                clearWordInputs();
-            }
-        }
-
-        function clearWordInputs() {
-            document.getElementById('new-word-input').value = '';
-            document.getElementById('new-translation-input').value = '';
-            document.getElementById('new-definition-input').value = '';
-            document.getElementById('new-examples-input').value = '';
-            document.getElementById('new-variations-input').value = '';
-            document.getElementById('new-pronunciation-input').value = '';
-            document.getElementById('new-related-words-input').value = '';
-        }
-
-        function loadFont() {
-            const fontUpload = document.getElementById('font-upload').files[0];
-            if (fontUpload) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const fontFace = new FontFace('UploadedFont', event.target.result);
-                    document.fonts.add(fontFace);
-                    fontFace.load().then(() => {
-                        document.body.style.fontFamily = 'Maru Gothic, sans-serif';
-                    });
-                };
-                reader.readAsArrayBuffer(fontUpload);
-            }
-        }
-
-        function importOTMJson() {
-            const otmUpload = document.getElementById('otm-upload').files[0];
-            if (otmUpload) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const importedData = JSON.parse(event.target.result);
-                    dictionaries[currentDictionary] = importedData;
-                    saveDictionary(); // インポート後に保存
-                    searchDictionary();
-                };
-                reader.readAsText(otmUpload);
-            }
-        }
-
-        function exportToJson() {
-            if (currentDictionary) {
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dictionaries[currentDictionary]));
-                const downloadAnchorNode = document.createElement('a');
-                downloadAnchorNode.setAttribute("href", dataStr);
-                downloadAnchorNode.setAttribute("download", currentDictionary + ".json");
-                document.body.appendChild(downloadAnchorNode);
-                downloadAnchorNode.click();
-                downloadAnchorNode.remove();
+                dictionaries[currentDictionary].words.push({
+                    entry: {
+                        id: dictionaries[currentDictionary].words.length + 1,
+                        form: newWord
+                    },
+                    translations: [{
+                        title: "翻訳",
+                        forms: [newTranslation]
+                    }],
+                    tags: [],
+                    contents: [{
+                        title: "定義",
+                        text: newDefinition
+                    }],
+                    variations: newVariations.map(variation => ({
+                        title: "変化形",
+                        form: variation
+                    })),
+                    relations: newRelatedWords.map(relation => ({
+                        title: "関連語",
+                        entry: {
+                            id: dictionaries[currentDictionary].words.length + 1,
+                            form: relation
+                        }
+                    }))
+                });
+                saveDictionary();
+                selectDictionary();
+                alert('単語が追加されました！');
+            } else {
+                alert('全ての入力フィールドを記入してください。');
             }
         }
 
         function editWord(index) {
-            const entry = dictionaries[currentDictionary][index];
-            document.getElementById('new-word-input').value = entry.word;
-            document.getElementById('new-translation-input').value = entry.translation;
-            document.getElementById('new-definition-input').value = entry.definition;
-            document.getElementById('new-examples-input').value = entry.examples.join(', ');
-            document.getElementById('new-variations-input').value = entry.variations.join(', ');
-            document.getElementById('new-pronunciation-input').value = entry.pronunciation;
-            document.getElementById('new-related-words-input').value = entry.relatedWords.join(', ');
-            dictionaries[currentDictionary].splice(index, 1);
-            searchDictionary();
+            const word = dictionaries[currentDictionary].words[index];
+            document.getElementById('new-word-input').value = word.entry.form;
+            document.getElementById('new-translation-input').value = word.translations[0].forms.join(', ');
+            document.getElementById('new-definition-input').value = word.contents.find(content => content.title === "定義").text;
+            document.getElementById('new-examples-input').value = word.contents.filter(content => content.title === "例文").map(content => content.text).join(', ');
+            document.getElementById('new-variations-input').value = word.variations.map(variation => variation.form).join(', ');
+            document.getElementById('new-pronunciation-input').value = word.contents.find(content => content.title === "発音")?.text || '';
+            document.getElementById('new-related-words-input').value = word.relations.map(relation => relation.entry.form).join(', ');
+
+            deleteWord(index);
         }
 
         function deleteWord(index) {
-            dictionaries[currentDictionary].splice(index, 1);
-            saveDictionary(); // 削除後に保存
-            searchDictionary();
+            dictionaries[currentDictionary].words.splice(index, 1);
+            saveDictionary();
+            selectDictionary();
         }
 
-        function translateToJapanese(example) {
-            // 例文の日本語訳を生成するロジック
-            return example + "（日本語訳）";
+        function exportToJson() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dictionaries[currentDictionary]));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", currentDictionary + ".json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
         }
+
+        function importOTMJson() {
+            const fileInput = document.getElementById('otm-upload');
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const importedData = JSON.parse(e.target.result);
+                    if (currentDictionary) {
+                        dictionaries[currentDictionary].words = importedData.words;
+                        dictionaries[currentDictionary].settings = importedData.settings;
+                        saveDictionary();
+                        selectDictionary();
+                        alert('OTM-jsonがインポートされました！');
+                    } else {
+                        alert('辞書を選択してください。');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function loadFont() {
+            const fileInput = document.getElementById('font-upload');
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const font = new FontFace('UploadedFont', e.target.result);
+                    font.load().then(function(loadedFont) {
+                        document.fonts.add(loadedFont);
+                        applyFont();
+                        alert('フォントが読み込まれました！');
+                    }).catch(function(error) {
+                        alert('フォントの読み込みに失敗しました: ' + error);
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function applyFont() {
+            const elements = document.querySelectorAll('.fictional-language');
+            elements.forEach(element => {
+                element.style.fontFamily = 'UploadedFont';
+            });
+        }
+
+        function setSearchMode(mode) {
+            searchMode = mode;
+        }
+
+        document.getElementById('search-input').addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+            if (query) {
+                filteredData = dictionaries[currentDictionary].words.filter(entry => {
+                    switch (searchMode) {
+                        case 'exact':
+                            return entry.entry.form.toLowerCase() === query;
+                        case 'starts-with':
+                            return entry.entry.form.toLowerCase().startsWith(query);
+                        case 'contains':
+                            return entry.entry.form.toLowerCase().includes(query);
+                        default:
+                            return false;
+                    }
+                });
+            } else {
+                filteredData = dictionaries[currentDictionary].words;
+            }
+            currentPage = 1;
+            displayDictionary(currentPage);
+        });
     </script>
 </body>
 </html>
