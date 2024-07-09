@@ -45,32 +45,25 @@
     </div>
 
     <script>
-        // Example user dictionaries data
-        const userDictionaries = [
-            { username: 'user1', dictionaryName: '辞書1' },
-            { username: 'user2', dictionaryName: '辞書2' },
-            { username: 'user3', dictionaryName: '辞書3' },
-        ];
-
         function loadUserDictionaries() {
             const dictionaryList = document.getElementById('dictionary-list');
             dictionaryList.innerHTML = '';
-            userDictionaries.forEach((dic, index) => {
+            const dictionaries = JSON.parse(localStorage.getItem('dictionaries')) || {};
+            Object.keys(dictionaries).forEach((dictionaryName, index) => {
                 const dicDiv = document.createElement('div');
                 dicDiv.className = 'user-dictionary';
                 dicDiv.innerHTML = `
-                    <div class="dictionary-name">${dic.dictionaryName}</div>
-                    <div class="username">作成者: ${dic.username}</div>
-                    <button class="select-button" onclick="selectDictionary(${index})">辞書を選択</button>
+                    <div class="dictionary-name">${dictionaryName}</div>
+                    <div class="username">作成者: User</div>
+                    <button class="select-button" onclick="selectDictionary('${dictionaryName}')">辞書を選択</button>
                 `;
                 dictionaryList.appendChild(dicDiv);
             });
         }
 
-        function selectDictionary(index) {
-            const selectedDictionary = userDictionaries[index];
+        function selectDictionary(dictionaryName) {
             // Handle dictionary selection, e.g., redirect to the dictionary page
-            alert(`辞書「${selectedDictionary.dictionaryName}」を選択しました`);
+            alert(`辞書「${dictionaryName}」を選択しました`);
         }
 
         // Load dictionaries on page load
