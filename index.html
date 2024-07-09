@@ -49,7 +49,7 @@
             background-color: #fff;
         }
         .fictional-lang {
-            font-family: 'UploadedFont', Maru Gothic, sans-serif;
+            font-family: 'UploadedFont', sans-serif;
         }
         .example-sentence {
             border: 1px solid #009999;
@@ -110,12 +110,16 @@
         </div>
     </div>
     <script>
-        let dictionaries = {};
+        let dictionaries = JSON.parse(localStorage.getItem('dictionaries')) || {};
         let currentDictionary = '';
         const resultsPerPage = 20;
         let currentPage = 1;
         let searchMode = 'exact';
         let filteredData = [];
+
+        function saveDictionaries() {
+            localStorage.setItem('dictionaries', JSON.stringify(dictionaries));
+        }
 
         function createDictionary() {
             const dictionaryName = document.getElementById('new-dictionary-name-input').value.trim();
@@ -128,6 +132,7 @@
                 select.appendChild(option);
                 select.value = dictionaryName;
                 selectDictionary();
+                saveDictionaries();
             }
         }
 
@@ -224,6 +229,7 @@
 
             if (word && currentDictionary) {
                 dictionaries[currentDictionary].push({ word, translation, definition, examples, variations, pronunciation, relatedWords, examplesJa });
+                saveDictionaries();
                 searchDictionary();
                 clearAddWordInputs();
             }
@@ -254,6 +260,7 @@
 
         function deleteWord(index) {
             dictionaries[currentDictionary].splice(index, 1);
+            saveDictionaries();
             searchDictionary();
         }
 
@@ -271,7 +278,6 @@
                         }
                     `));
                     document.head.appendChild(newStyle);
-                    document.body.style.fontFamily = "'UploadedFont', 'Maru Gothic', sans-serif";
                 };
                 reader.readAsDataURL(fontUpload);
             }
@@ -292,6 +298,7 @@
                             option.textContent = key;
                             select.appendChild(option);
                         });
+                        saveDictionaries();
                     } catch (error) {
                         alert('OTM-jsonの読み込みに失敗しました。');
                     }
@@ -309,6 +316,17 @@
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
         }
+
+        // Initialize dictionary select options
+        document.addEventListener('DOMContentLoaded', () => {
+            const select = document.getElementById('select-dictionary');
+            Object.keys(dictionaries).forEach(key => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = key;
+                select.appendChild(option);
+            });
+        });
     </script>
 </body>
 </html>
