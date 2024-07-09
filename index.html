@@ -147,6 +147,35 @@
         let searchMode = 'exact';
         let filteredData = [];
 
+        // ページ読み込み時に保存された辞書データを読み込む
+        window.onload = function() {
+            loadDictionary();
+            login();
+        };
+
+        // 辞書データをローカルストレージに保存する
+        function saveDictionary() {
+            localStorage.setItem('dictionaries', JSON.stringify(dictionaries));
+        }
+
+        // ローカルストレージから辞書データを読み込む
+        function loadDictionary() {
+            const savedData = localStorage.getItem('dictionaries');
+            if (savedData) {
+                dictionaries = JSON.parse(savedData);
+                // ロードした後に辞書を選択する
+                const select = document.getElementById('select-dictionary');
+                for (let dictionaryName in dictionaries) {
+                    const option = document.createElement('option');
+                    option.value = dictionaryName;
+                    option.textContent = dictionaryName;
+                    select.appendChild(option);
+                }
+                select.value = currentDictionary;
+                selectDictionary();
+            }
+        }
+
         function createDictionary() {
             const dictionaryName = document.getElementById('new-dictionary-name-input').value.trim();
             if (dictionaryName && !dictionaries[dictionaryName]) {
@@ -158,6 +187,7 @@
                 select.appendChild(option);
                 select.value = dictionaryName;
                 selectDictionary();
+                saveDictionary(); // 辞書作成後に保存
             }
         }
 
@@ -263,6 +293,7 @@
                     japaneseExamples: newJapaneseExamples
                 };
                 dictionaries[currentDictionary].push(newEntry);
+                saveDictionary(); // 単語追加後に保存
                 searchDictionary();
                 clearWordInputs();
             }
@@ -300,6 +331,7 @@
                 reader.onload = function(event) {
                     const importedData = JSON.parse(event.target.result);
                     dictionaries[currentDictionary] = importedData;
+                    saveDictionary(); // インポート後に保存
                     searchDictionary();
                 };
                 reader.readAsText(otmUpload);
@@ -333,6 +365,7 @@
 
         function deleteWord(index) {
             dictionaries[currentDictionary].splice(index, 1);
+            saveDictionary(); // 削除後に保存
             searchDictionary();
         }
 
