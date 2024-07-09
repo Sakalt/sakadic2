@@ -140,7 +140,7 @@
 
         // ページ読み込み時にログインする
         window.onload = function() {
-            loadDictionary();
+            loadDictionaries();
             login();
         };
 
@@ -152,25 +152,24 @@
         let filteredData = [];
 
         // ページ読み込み時に保存された辞書データを読み込む
-        function loadDictionary() {
+        function loadDictionaries() {
             const savedData = localStorage.getItem('dictionaries');
             if (savedData) {
                 dictionaries = JSON.parse(savedData);
                 // ロードした後に辞書を選択する
                 const select = document.getElementById('select-dictionary');
+                select.innerHTML = '<option value="">辞書を選択</option>';
                 for (let dictionaryName in dictionaries) {
                     const option = document.createElement('option');
                     option.value = dictionaryName;
                     option.textContent = dictionaryName;
                     select.appendChild(option);
                 }
-                select.value = currentDictionary;
-                selectDictionary();
             }
         }
 
         // 辞書データをローカルストレージに保存する
-        function saveDictionary() {
+        function saveDictionaries() {
             localStorage.setItem('dictionaries', JSON.stringify(dictionaries));
         }
 
@@ -196,7 +195,7 @@
                 select.appendChild(option);
                 select.value = dictionaryName;
                 selectDictionary();
-                saveDictionary(); // 辞書作成後に保存
+                saveDictionaries(); // 辞書作成後に保存
             }
         }
 
@@ -330,7 +329,7 @@
                         }
                     }))
                 });
-                saveDictionary();
+                saveDictionaries();
                 selectDictionary();
                 alert('単語が追加されました！');
             } else {
@@ -353,7 +352,7 @@
 
         function deleteWord(index) {
             dictionaries[currentDictionary].words.splice(index, 1);
-            saveDictionary();
+            saveDictionaries();
             selectDictionary();
         }
 
@@ -377,7 +376,7 @@
                     if (currentDictionary) {
                         dictionaries[currentDictionary].words = importedData.words;
                         dictionaries[currentDictionary].settings = importedData.settings;
-                        saveDictionary();
+                        saveDictionaries();
                         selectDictionary();
                         alert('OTM-jsonがインポートされました！');
                     } else {
