@@ -109,7 +109,37 @@
             <button id="export-json-button" onclick="exportToJson()">JSONとしてエクスポート</button>
         </div>
     </div>
+
     <script>
+        // ユーザー名を保存する関数
+        function saveUsername() {
+            const inputUsername = prompt("ユーザー名を入力してください:");
+            if (inputUsername) {
+                localStorage.setItem("username", inputUsername);
+                alert("ユーザー名が保存されました！");
+            } else {
+                alert("ユーザー名を入力してください。");
+            }
+        }
+
+        // ページ読み込み時に保存されたユーザー名を取得する関数
+        function getSavedUsername() {
+            return localStorage.getItem("username");
+        }
+
+        // ログインするための関数
+        function login() {
+            const savedUsername = getSavedUsername();
+            if (savedUsername) {
+                alert(`ようこそ、${savedUsername} さん！`);
+            } else {
+                saveUsername();
+            }
+        }
+
+        // ページ読み込み時にログインする
+        window.onload = login;
+
         let dictionaries = {};
         let currentDictionary = '';
         const resultsPerPage = 20;
