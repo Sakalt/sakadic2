@@ -3,39 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dictionaries</title>
+    <title>ユーザー辞書一覧</title>
     <style>
         body {
             font-family: 'Maru Gothic', sans-serif;
             background-color: #f4f4f4;
         }
-        .dictionary-list {
-            width: 60%;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
+        #user-dictionaries {
+            width: 80%;
+            margin: 0 auto;
+            text-align: left;
+        }
+        .user-dictionary {
             border: 1px solid #ccc;
-        }
-        .dictionary-item {
-            margin-bottom: 10px;
-        }
-        .dictionary-link {
-            display: block;
             padding: 10px;
+            margin: 10px 0;
+            background-color: #fff;
+        }
+        .dictionary-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .username {
+            font-size: 14px;
+            color: #666;
+        }
+        .select-button {
             background-color: #00aa00;
             color: white;
-            text-decoration: none;
-            text-align: center;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="dictionary-list">
-        <h1>User Dictionaries</h1>
-        <div class="dictionary-item">
-            <a href="識別.html" class="dictionary-link">識別</a>
-        </div>
-        <!-- Add more dictionary items dynamically based on user's dictionaries -->
+    <div id="user-dictionaries">
+        <h1>ユーザー辞書一覧</h1>
+        <div id="dictionary-list"></div>
     </div>
+
+    <script>
+        // Sample data
+        const userDictionaries = [
+            { username: 'user1', dictionaryName: '辞書1' },
+            { username: 'user2', dictionaryName: '辞書2' },
+            { username: 'user3', dictionaryName: '辞書3' },
+        ];
+
+        function loadUserDictionaries() {
+            const dictionaryList = document.getElementById('dictionary-list');
+            dictionaryList.innerHTML = '';
+            userDictionaries.forEach((dic, index) => {
+                const dicDiv = document.createElement('div');
+                dicDiv.className = 'user-dictionary';
+                dicDiv.innerHTML = `
+                    <div class="dictionary-name">${dic.dictionaryName}</div>
+                    <div class="username">作成者: ${dic.username}</div>
+                    <button class="select-button" onclick="selectDictionary(${index})">辞書を選択</button>
+                `;
+                dictionaryList.appendChild(dicDiv);
+            });
+        }
+
+        function selectDictionary(index) {
+            const selectedDictionary = userDictionaries[index];
+            // Perform the action to select the dictionary
+            alert(`辞書「${selectedDictionary.dictionaryName}」を選択しました`);
+        }
+
+        // Load dictionaries on page load
+        window.onload = loadUserDictionaries;
+    </script>
 </body>
 </html>
