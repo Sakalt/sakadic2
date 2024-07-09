@@ -10,64 +10,50 @@
             background-color: #f4f4f4;
         }
         #user-dictionaries {
-            width: 80%;
+            width: 60%;
             margin: 0 auto;
             text-align: left;
         }
-        .user-dictionary {
+        .dictionary-item {
             border: 1px solid #ccc;
             padding: 10px;
             margin: 10px 0;
             background-color: #fff;
-        }
-        .dictionary-name {
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .username {
-            font-size: 14px;
-            color: #666;
-        }
-        .select-button {
-            background-color: #00aa00;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <div id="user-dictionaries">
         <h1>ユーザー辞書一覧</h1>
-        <div id="dictionary-list"></div>
+        <div id="dictionaries-list"></div>
     </div>
-
     <script>
-        function loadUserDictionaries() {
-            const dictionaryList = document.getElementById('dictionary-list');
-            dictionaryList.innerHTML = '';
-            const dictionaries = JSON.parse(localStorage.getItem('dictionaries')) || {};
-            Object.keys(dictionaries).forEach((dictionaryName, index) => {
-                const dicDiv = document.createElement('div');
-                dicDiv.className = 'user-dictionary';
-                dicDiv.innerHTML = `
-                    <div class="dictionary-name">${dictionaryName}</div>
-                    <div class="username">作成者: User</div>
-                    <button class="select-button" onclick="selectDictionary('${dictionaryName}')">辞書を選択</button>
+        const userDictionaries = [
+            { username: 'user1', dictionaryName: '辞書1' },
+            { username: 'user2', dictionaryName: '辞書2' },
+            { username: 'user3', dictionaryName: '辞書3' }
+        ];
+
+        function loadDictionaries() {
+            const listDiv = document.getElementById('dictionaries-list');
+            listDiv.innerHTML = '';
+            userDictionaries.forEach(dic => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'dictionary-item';
+                itemDiv.innerHTML = `
+                    <h3>${dic.username} - ${dic.dictionaryName}</h3>
+                    <button onclick="openDictionary('${dic.dictionaryName}')">辞書を開く</button>
                 `;
-                dictionaryList.appendChild(dicDiv);
+                listDiv.appendChild(itemDiv);
             });
         }
 
-        function selectDictionary(dictionaryName) {
-            // Handle dictionary selection, e.g., redirect to the dictionary page
-            alert(`辞書「${dictionaryName}」を選択しました`);
+        function openDictionary(dictionaryName) {
+            // 辞書を開くロジックを追加
+            alert(dictionaryName + ' を開く');
         }
 
-        // Load dictionaries on page load
-        window.onload = loadUserDictionaries;
+        loadDictionaries();
     </script>
 </body>
 </html>
