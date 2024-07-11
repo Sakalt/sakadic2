@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>辞書一覧</title>
+    <style>
+        body {
+            font-family: 'Maru Gothic', sans-serif;
+        }
+        .header {
+            background-color: lightorange;
+            padding: 10px;
+            text-align: center;
+        }
+        .button {
+            background-color: #09FF00;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .dictionary-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .dictionary-item {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ユーザー作成辞書</h1>
+    </div>
+    <div>
+        <h2>辞書一覧</h2>
+        <ul id="dictionaryList" class="dictionary-list"></ul>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const dictionaries = JSON.parse(localStorage.getItem('dictionaries') || '{}');
+            const dictionaryList = document.getElementById('dictionaryList');
+
+            Object.values(dictionaries).sort((a, b) => a.id - b.id).forEach(dictionary => {
+                const listItem = document.createElement('li');
+                listItem.className = 'dictionary-item';
+                listItem.innerHTML = `
+                    <h3>${dictionary.name}</h3>
+                    <p>${dictionary.description}</p>
+                    <a href="#" onclick="loadDictionary(${dictionary.id})">詳細を見る</a>
+                `;
+                dictionaryList.appendChild(listItem);
+            });
+        });
+
+        function loadDictionary(id) {
+            // 辞書の詳細ページを表示するための処理
+            // 実装例: 詳細ページに移動
+            window.location.href = `dictionary.html?id=${id}`;
+        }
+    </script>
+</body>
+</html>
