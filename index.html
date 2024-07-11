@@ -29,10 +29,27 @@
     <script>
         const dictionaries = {};
 
+        document.addEventListener("DOMContentLoaded", function() {
+            if (!localStorage.getItem('userName')) {
+                let userName = prompt("名前を入力してください:");
+                if (userName) {
+                    localStorage.setItem('userName', userName);
+                    alert(`こんにちは、${userName}さん！`);
+                }
+            } else {
+                let userName = localStorage.getItem('userName');
+                alert(`おかえりなさい、${userName}さん！`);
+            }
+
+            const savedDictionaries = JSON.parse(localStorage.getItem('dictionaries') || '{}');
+            Object.assign(dictionaries, savedDictionaries);
+            updateDictionaryList();
+            generateExampleSentence(); // 毎日の例文生成をページ読み込み時に呼び出し
+        });
+
         function saveDictionary() {
             const dictionaryName = document.getElementById('dictionaryName').value;
             const fontURL = document.getElementById('fontURL').value;
-            const dictionaryContent = document.getElementById('dictionaryContent').value;
             const dictionaryDescription = document.getElementById('dictionaryDescription').value;
 
             const dictionaryID = Date.now(); // Use the timestamp as a unique ID
@@ -42,7 +59,7 @@
                 name: dictionaryName,
                 fontURL: fontURL,
                 description: dictionaryDescription,
-                content: JSON.parse(dictionaryContent),
+                content: { words: [], version: 2, settings: {} },
             };
 
             dictionaries[dictionaryID] = newDictionary;
@@ -78,7 +95,6 @@
             if (dictionary) {
                 document.getElementById('dictionaryName').value = dictionary.name;
                 document.getElementById('fontURL').value = dictionary.fontURL;
-                document.getElementById('dictionaryContent').value = JSON.stringify(dictionary.content, null, 2);
                 document.getElementById('dictionaryDescription').value = dictionary.description;
 
                 const link = document.createElement('link');
@@ -127,6 +143,32 @@
             }
         }
 
+        function importDictionary(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const importedContent = JSON.parse(e.target.result);
+                const dictionaryName = prompt("インポートする辞書の名前を入力してください:");
+                const fontURL = prompt("フォントURLを入力してください:");
+
+                const dictionaryID = Date.now();
+
+                const newDictionary = {
+                    id: dictionaryID,
+                    name: dictionaryName,
+                    fontURL: fontURL,
+                    description: "",
+                    content: importedContent,
+                };
+
+                dictionaries[dictionaryID] = newDictionary;
+                localStorage.setItem('dictionaries', JSON.stringify(dictionaries));
+
+                updateDictionaryList();
+            };
+            reader.readAsText(file);
+        }
+
         function generateExampleSentence() {
             // 今日の例文生成のためのAI呼び出しコードはここに配置されます
             // 仮の例文を表示
@@ -155,13 +197,6 @@
                 searchResults.appendChild(listItem);
             });
         }
-
-        window.onload = function() {
-            const savedDictionaries = JSON.parse(localStorage.getItem('dictionaries') || '{}');
-            Object.assign(dictionaries, savedDictionaries);
-            updateDictionaryList();
-            generateExampleSentence(); // 毎日の例文生成をページ読み込み時に呼び出し
-        };
     </script>
 </head>
 <body>
@@ -178,14 +213,12 @@
         <label for="dictionaryDescription">辞書の説明:</label>
         <textarea id="dictionaryDescription" rows="3" cols="50"></textarea>
         <br>
-        <label for="dictionaryContent">辞書内容 (JSON形式):</label>
-        <textarea id="dictionaryContent" rows="10" cols="50"></textarea>
-        <br>
         <button class="button" onclick="saveDictionary()">辞書を保存</button>
     </div>
     <div>
         <h2>辞書一覧</h2>
         <ul id="dictionaryList"></ul>
+        <a href="dict.html">辞書の場所</a>
     </div>
     <div>
         <h2>単語作成</h2>
@@ -208,20 +241,24 @@
         <input type="text" id="wordExamples">
         <br>
         <button class="button" onclick="saveWord()">単語を保存</button>
-        <button class="button" onclick="exportDictionary()">辞書をエクスポート</button>
+    </div>
+    <div>
+        <h2>辞書をエクスポート</h2>
+        <button class="button" onclick="exportDictionary()">エクスポート</button>
+    </div>
+    <div>
+        <h2>辞書をインポート</h2>
+        <input type="file" id="importFile" onchange="importDictionary(event)">
     </div>
     <div>
         <h2>今日の例文</h2>
         <div class="example-sentence" id="dailyExampleSentence"></div>
-        <br>
-        <label for="customExampleInput">カスタム例文入力:</label>
-        <input type="text" id="customExampleInput">
-        <button class="button" onclick="generateCustomExample()">翻訳</button>
+        <input type="text" id="customExampleInput" placeholder="カスタム例文を入力">
+        <button class="button" onclick="generateCustomExample()">例文生成</button>
     </div>
     <div>
         <h2>単語検索</h2>
-        <label for="searchQuery">検索:</label>
-        <input type="text" id="searchQuery">
+        <input type="text" id="searchQuery" placeholder="単語を検索">
         <button class="button" onclick="searchWords()">検索</button>
         <ul id="searchResults"></ul>
     </div>
